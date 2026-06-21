@@ -93,7 +93,7 @@ export async function fetchStats(contract?: ethers.Contract): Promise<Stats> {
   return { frames, collected, volume };
 }
 
-const MAX = 120;
+export const MAX = 120;
 
 export async function fetchFrames(contract?: ethers.Contract): Promise<Frame[]> {
   const c = contract ?? readContract();
@@ -155,7 +155,12 @@ export function shortAddr(addr: string, lead = 6, tail = 4): string {
 export function fmtUsdc(wei: bigint, dp = 2): string {
   const n = parseFloat(ethers.formatEther(wei));
   if (n === 0) return "0";
-  if (n < 0.01) return n.toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
+  // never collapse a nonzero (charging) amount down to "0"
+  if (n < 0.0001) return "<0.0001";
+  if (n < 0.01) {
+    const s = n.toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
+    return s === "0" ? "<0.0001" : s;
+  }
   const s = n.toFixed(dp);
   return s.includes(".") ? s.replace(/0+$/, "").replace(/\.$/, "") : s;
 }
@@ -190,13 +195,17 @@ export interface VideoMeta {
 export function parseVideo(url: string, atMs = 0): VideoMeta {
   const u = (url || "").trim();
   const sec = Math.floor(atMs / 1000);
-  const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-  if (yt) {
+  let ytId = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/)?.[1];
+  // host-gated fallback: pull the id from a v= param wherever it sits (watch?list=…&v=ID, ?feature=shared&v=ID)
+  if (!ytId && /(?:\/\/|\.)youtube\.com\//.test(u)) {
+    ytId = u.match(/[?&]v=([A-Za-z0-9_-]{11})/)?.[1];
+  }
+  if (ytId) {
     return {
       kind: "youtube",
-      id: yt[1],
-      thumb: `https://img.youtube.com/vi/${yt[1]}/hqdefault.jpg`,
-      href: `https://www.youtube.com/watch?v=${yt[1]}${sec ? `&t=${sec}s` : ""}`,
+      id: ytId,
+      thumb: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+      href: `https://www.youtube.com/watch?v=${ytId}${sec ? `&t=${sec}s` : ""}`,
     };
   }
   const vm = u.match(/(?:^|\/\/|\.)vimeo\.com\/(?:[\w-]+\/)*(?:video\/)?(\d+)/);

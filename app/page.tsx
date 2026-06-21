@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ethers } from "ethers";
 import Header from "@/components/Header";
 import FrameCard from "@/components/FrameCard";
@@ -10,6 +10,7 @@ import { pickProvider } from "@/lib/wallet";
 import {
   CONTRACT_ADDRESS,
   FRAMECUT_ABI,
+  MAX,
   readContract,
   fetchStats,
   fetchFrames,
@@ -29,15 +30,17 @@ function parseTimecode(s: string): number | null {
   if (t.includes(":")) {
     const parts = t.split(":");
     if (parts.length !== 2) return null;
-    const m = Number(parts[0]);
-    const ss = Number(parts[1]);
-    if (!isFinite(m) || !isFinite(ss) || m < 0 || ss < 0 || ss >= 60) return null;
-    sec = m * 60 + ss;
+    const [mm, ssRaw] = parts;
+    // strict integers only — Number() would otherwise accept hex/exponent/decimal/empty
+    if (!/^\d+$/.test(mm) || !/^\d{1,2}$/.test(ssRaw)) return null;
+    const ss = Number(ssRaw);
+    if (ss >= 60) return null;
+    sec = Number(mm) * 60 + ss;
   } else {
+    if (!/^\d+$/.test(t)) return null; // whole seconds only
     sec = Number(t);
-    if (!isFinite(sec) || sec < 0) return null;
   }
-  const ms = Math.round(sec * 1000);
+  const ms = sec * 1000;
   if (ms > 4294967295) return null;
   return ms;
 }
@@ -63,18 +66,42 @@ export default function Home() {
   const [collectMsg, setCollectMsg] = useState<Record<number, string>>({});
   const [owned, setOwned] = useState<Record<number, number>>({});
 
+  // refs that survive re-renders: drop stale loads, ignore post-tx side effects after a
+  // wallet change, block double-submits, and clean up per-frame "✓ Collected" timers.
+  const loadEpoch = useRef(0);
+  const accountRef = useRef(account);
+  const collectInFlight = useRef(false);
+  const cutInFlight = useRef(false);
+  const timers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+
+  useEffect(() => {
+    accountRef.current = account;
+  }, [account]);
+
+  useEffect(() => {
+    const t = timers.current;
+    return () => {
+      Object.values(t).forEach(clearTimeout);
+    };
+  }, []);
+
   const load = useCallback(async () => {
+    const myEpoch = ++loadEpoch.current;
     try {
       const c = readContract();
       const [s, fr] = await Promise.all([fetchStats(c), fetchFrames(c)]);
+      if (myEpoch !== loadEpoch.current) return;
       setStats(s);
       setFrames(fr);
       if (account) {
         const [mn, col] = await Promise.all([fetchFramesOf(account, c), fetchCollectedBy(account, c)]);
+        if (myEpoch !== loadEpoch.current) return;
         setMine(mn);
         setCollected(col);
         const ids = Array.from(new Set([...fr, ...mn, ...col].map((f) => f.id)));
-        setOwned(await fetchOwned(ids, account, c));
+        const ownedMap = await fetchOwned(ids, account, c);
+        if (myEpoch !== loadEpoch.current) return;
+        setOwned(ownedMap);
       } else {
         setMine([]);
         setCollected([]);
@@ -110,24 +137,35 @@ export default function Home() {
     if (ms === null) return setCutMsg("✗ Timecode must be like 1:23 or 83");
     if (!title.trim()) return setCutMsg("✗ Name the frame");
     const p = price.trim();
-    if (p && !/^\d+(\.\d{1,18})?$/.test(p)) return setCutMsg("✗ Price must be a plain amount, e.g. 0.5");
+    if (!p) return setCutMsg("✗ Set a price, or type 0 for a free frame");
+    if (!/^\d+(\.\d{1,2})?$/.test(p)) return setCutMsg("✗ Price must be a plain amount, max 2 decimals (e.g. 0.5)");
+    const pn = Number(p);
+    if (pn > 0 && pn < 0.01) return setCutMsg("✗ Minimum paid price is 0.01 USDC (or type 0 for free)");
+    if (cutInFlight.current) return;
+    cutInFlight.current = true;
+    const captured = account;
     setCutting(true);
     setCutMsg("Cutting… confirm in your wallet");
     try {
       const c = await writeContract();
-      const priceWei = p && Number(p) > 0 ? ethers.parseEther(p) : 0n;
+      const priceWei = pn > 0 ? ethers.parseEther(p) : 0n;
       const tx = await c.cut(video.trim(), ms, title.trim(), priceWei);
       setCutMsg("Confirming on ARC…");
       await tx.wait();
+      if (accountRef.current !== captured) return;
       setCutMsg("✓ Frame is on-chain");
       setVideo("");
       setTc("");
       setTitle("");
       await load();
     } catch (e) {
-      const err = e as { code?: string | number; message?: string };
-      setCutMsg("✗ " + (err?.code === "ACTION_REJECTED" || err?.code === 4001 ? "Cancelled" : err?.message?.slice(0, 70) || "Failed"));
+      const err = e as { code?: string | number; reason?: string; shortMessage?: string; message?: string };
+      const why = err?.code === "ACTION_REJECTED" || err?.code === 4001
+        ? "Cancelled"
+        : (err?.reason || err?.shortMessage || err?.message || "Failed").slice(0, 70);
+      setCutMsg("✗ " + why);
     } finally {
+      cutInFlight.current = false;
       setCutting(false);
     }
   }
@@ -138,20 +176,36 @@ export default function Home() {
       connect();
       return;
     }
+    if (collectInFlight.current) return; // synchronous re-entrancy guard (state lags a render)
+    collectInFlight.current = true;
+    const captured = account;
+    if (timers.current[id]) {
+      clearTimeout(timers.current[id]);
+      delete timers.current[id];
+    }
     setCollectBusy(id);
     setCollectMsg((m) => ({ ...m, [id]: "Collecting…" }));
     try {
       const c = await writeContract();
       const tx = await c.collect(id, { value: priceWei });
       await tx.wait();
+      if (accountRef.current !== captured) return; // wallet changed/disconnected mid-tx
       await load();
-      if (account) await refreshBalance(account);
+      if (accountRef.current !== captured) return;
+      await refreshBalance(captured);
       setCollectMsg((m) => ({ ...m, [id]: "✓ Collected" }));
-      setTimeout(() => setCollectMsg((m) => { const n = { ...m }; delete n[id]; return n; }), 2500);
+      timers.current[id] = setTimeout(() => {
+        setCollectMsg((m) => { const n = { ...m }; delete n[id]; return n; });
+        delete timers.current[id];
+      }, 2500);
     } catch (e) {
-      const err = e as { code?: string | number; message?: string };
-      setCollectMsg((m) => ({ ...m, [id]: "✗ " + (err?.code === "ACTION_REJECTED" || err?.code === 4001 ? "Cancelled" : "Failed") }));
+      const err = e as { code?: string | number; reason?: string; shortMessage?: string; message?: string };
+      const why = err?.code === "ACTION_REJECTED" || err?.code === 4001
+        ? "Cancelled"
+        : (err?.reason || err?.shortMessage || err?.message || "Failed").slice(0, 70);
+      setCollectMsg((m) => ({ ...m, [id]: "✗ " + why }));
     } finally {
+      collectInFlight.current = false;
       setCollectBusy(null);
     }
   }
@@ -179,14 +233,14 @@ export default function Home() {
             </div>
 
             {/* stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0, marginTop: 38, border: "2px solid var(--ink)" }}>
+            <div className="fc-stats" style={{ marginTop: 38, border: "2px solid var(--ink)" }}>
               {[
                 { k: "Frames cut", v: stats.frames.toString() },
                 { k: "Editions collected", v: stats.collected.toString() },
                 { k: "USDC paid out", v: "$" + fmtUsdc(stats.volume) },
               ].map((s, i) => (
-                <div key={s.k} style={{ padding: "18px 20px", borderLeft: i ? "2px solid var(--ink)" : "none", background: i === 1 ? "var(--paper-2)" : "var(--paper)" }}>
-                  <div className="display" style={{ fontSize: 38 }}>{s.v}</div>
+                <div key={s.k} className="fc-stat-cell" style={{ padding: "18px 20px", background: i === 1 ? "var(--paper-2)" : "var(--paper)" }}>
+                  <div className="display" style={{ fontSize: "clamp(22px, 6vw, 38px)", overflowWrap: "anywhere" }}>{s.v}</div>
                   <div className="tag" style={{ color: "var(--muted)", marginTop: 6 }}>{s.k}</div>
                 </div>
               ))}
@@ -199,7 +253,7 @@ export default function Home() {
               <div className="filmstrip" />
               <div style={{ padding: 20 }}>
                 <div className="tag" style={{ marginBottom: 16, color: "var(--red)" }}>● REC — cut a new frame</div>
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0,2fr) minmax(0,1fr)", gap: 12, marginBottom: 12 }}>
+                <div className="fc-cut2" style={{ marginBottom: 12 }}>
                   <div>
                     <label className="tag" style={{ color: "var(--muted)", display: "block", marginBottom: 6 }}>Video link</label>
                     <input value={video} onChange={(e) => setVideo(e.target.value)} maxLength={300} placeholder="https://youtube.com/…" className="input" disabled={!account} />
@@ -209,7 +263,7 @@ export default function Home() {
                     <input value={tc} onChange={(e) => setTc(e.target.value)} placeholder="1:23  or  83" className="input" disabled={!account} />
                   </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0,2fr) minmax(0,1fr) auto", gap: 12, alignItems: "end" }}>
+                <div className="fc-cut3">
                   <div>
                     <label className="tag" style={{ color: "var(--muted)", display: "block", marginBottom: 6 }}>Frame title</label>
                     <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="The look, act III" className="input" disabled={!account} />
@@ -254,11 +308,23 @@ export default function Home() {
             ) : list.length === 0 ? (
               <div className="box" style={{ padding: 44, textAlign: "center" }}><span className="mono" style={{ color: "var(--muted)", fontSize: 13 }}>{tab === "all" ? "No frames cut yet. Be the first ↑" : tab === "mine" ? "You haven't cut a frame yet." : "Nothing collected yet."}</span></div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
-                {list.map((f) => (
-                  <FrameCard key={f.id} frame={f} me={account} owned={owned[f.id] ?? 0} busy={collectBusy === f.id} msg={collectMsg[f.id]} onCollect={collectFrame} />
-                ))}
-              </div>
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
+                  {list.map((f) => (
+                    <FrameCard key={f.id} frame={f} me={account} owned={owned[f.id] ?? 0} busy={collectBusy === f.id} msg={collectMsg[f.id]} onCollect={collectFrame} />
+                  ))}
+                </div>
+                {tab === "all" && frames.length < Number(stats.frames) && (
+                  <div className="mono" style={{ marginTop: 14, fontSize: 12, color: "var(--muted)" }}>
+                    Showing the latest {frames.length} of {stats.frames.toString()} frames.
+                  </div>
+                )}
+                {tab !== "all" && list.length >= MAX && (
+                  <div className="mono" style={{ marginTop: 14, fontSize: 12, color: "var(--muted)" }}>
+                    Showing the latest {MAX}. Older frames aren&apos;t listed here.
+                  </div>
+                )}
+              </>
             )}
           </section>
 

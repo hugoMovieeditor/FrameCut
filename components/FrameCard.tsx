@@ -28,13 +28,23 @@ export default function FrameCard({ frame, me, owned = 0, busy, msg, onCollect }
           position: "relative",
           display: "block",
           aspectRatio: "16 / 9",
-          background: v.thumb ? `var(--ink) center/cover no-repeat url(${v.thumb})` : "var(--paper-2)",
+          background: "var(--paper-2)",
           borderBottom: "2px solid var(--ink)",
           textDecoration: "none",
+          overflow: "hidden",
         }}
       >
-        {!v.thumb && (
-          <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 28 }}>▶</span>
+        {/* ▶ sits underneath; a real <img> covers it and hides itself if the thumb 404s (deleted/private) */}
+        <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 28 }}>▶</span>
+        {v.thumb && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={v.thumb}
+            alt=""
+            loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", background: "var(--ink)" }}
+          />
         )}
         {/* crop marks */}
         <span style={{ position: "absolute", top: 6, left: 6, width: 12, height: 12, borderTop: "2px solid var(--red)", borderLeft: "2px solid var(--red)" }} />

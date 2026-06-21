@@ -30,7 +30,7 @@ export default function Header({ account, balance, chainOk, connecting, onConnec
 
   return (
     <header style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--paper)", borderBottom: "2px solid var(--ink)" }}>
-      <div style={{ maxWidth: 1240, margin: "0 auto", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 11, textDecoration: "none" }}>
           <Logo size={26} />
           <span className="mono" style={{ fontSize: 17, fontWeight: 700, letterSpacing: "0.02em", textTransform: "uppercase" }}>
@@ -38,7 +38,7 @@ export default function Header({ account, balance, chainOk, connecting, onConnec
           </span>
         </Link>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end", minWidth: 0 }}>
           {account ? (
             <>
               {!chainOk && (
@@ -53,8 +53,8 @@ export default function Header({ account, balance, chainOk, connecting, onConnec
                   style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "8px 12px", fontFamily: "'Space Mono', monospace", fontSize: 12.5, fontWeight: 700, cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--ink)" }}
                 >
                   <span style={{ width: 8, height: 8, background: chainOk ? "var(--ink)" : "var(--red)", flexShrink: 0 }} />
-                  <span>{balance || "0"} USDC</span>
-                  <span style={{ width: 2, height: 13, background: "var(--ink)" }} />
+                  <span className="hdr-balance">{balance || "0"} USDC</span>
+                  <span className="hdr-div" style={{ width: 2, height: 13, background: "var(--ink)" }} />
                   <span>{account.slice(0, 5)}…{account.slice(-3)}</span>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style={{ transform: open ? "rotate(180deg)" : "none" }}>
                     <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.6" strokeLinecap="square" />

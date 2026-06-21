@@ -20,6 +20,13 @@ html {
   scroll-behavior: smooth;
 }
 
+/* a single wide child can never force horizontal page scroll (clip keeps sticky working) */
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
 body {
   background: var(--paper);
   color: var(--ink);
@@ -180,4 +187,50 @@ a {
 }
 .fc-mi.danger:hover {
   background: var(--red);
+}
+
+/* ── responsive grids (inline styles can't be media-queried, so these live here) ── */
+.fc-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.fc-stats .fc-stat-cell + .fc-stat-cell {
+  border-left: 2px solid var(--ink);
+}
+
+.fc-cut2 {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.fc-cut3 {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+@media (max-width: 640px) {
+  .fc-stats {
+    grid-template-columns: 1fr;
+  }
+  .fc-stats .fc-stat-cell + .fc-stat-cell {
+    border-left: none;
+    border-top: 2px solid var(--ink);
+  }
+  .fc-cut2,
+  .fc-cut3 {
+    grid-template-columns: 1fr;
+  }
+  .fc-cut3 .btn {
+    width: 100%;
+  }
+}
+
+/* keep the wallet pill from overflowing the sticky header on small phones */
+@media (max-width: 440px) {
+  .hdr-balance,
+  .hdr-div {
+    display: none;
+  }
 }
