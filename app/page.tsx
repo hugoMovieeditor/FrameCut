@@ -210,92 +210,125 @@ export default function Home() {
     }
   }
 
-  const wrap: React.CSSProperties = { maxWidth: 1240, margin: "0 auto", padding: "0 22px" };
+  const wrap: React.CSSProperties = { maxWidth: 1180, margin: "0 auto", padding: "0 22px" };
   const list = tab === "all" ? frames : tab === "mine" ? mine : collected;
 
   return (
-    <div style={{ minHeight: "100vh", paddingBottom: 60 }}>
+    <div style={{ minHeight: "100vh", paddingBottom: 70 }}>
       <Header account={account} balance={balance} chainOk={chainOk} connecting={connecting} onConnect={connect} onDisconnect={disconnect} />
 
       <>
-          {/* hero */}
-          <section style={{ ...wrap, paddingTop: 44, paddingBottom: 30 }}>
-            <div className="tag" style={{ color: "var(--muted)", marginBottom: 18 }}>Cut a frame · mint it · ARC Testnet</div>
-            <h1 className="display" style={{ fontSize: "clamp(44px, 7.5vw, 104px)" }}>Cut a frame.</h1>
-            <h1 className="display" style={{ fontSize: "clamp(44px, 7.5vw, 104px)", color: "var(--red)" }}>Mint the moment.</h1>
-            <p style={{ fontSize: 17, color: "var(--ink)", maxWidth: 560, lineHeight: 1.5, marginTop: 22 }}>
-              Pick a timestamp in your video, cut that single frame, and put it on-chain. Collectors
-              grab an edition for a few cents of USDC — and it pays you the instant they do.
-            </p>
-            <div style={{ display: "flex", gap: 12, marginTop: 26, flexWrap: "wrap" }}>
-              <a href="#cut" className="btn btn--red">Cut a frame →</a>
-              <a href="#sheet" className="btn">See the sheet</a>
+          {/* ── hero: the content-machine canvas headline ── */}
+          <section style={{ ...wrap, paddingTop: 64, paddingBottom: 18, position: "relative" }}>
+            {/* decorative floating canvas: dashed connectors between sample source nodes */}
+            <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+              <svg className="connectors" viewBox="0 0 1180 520" preserveAspectRatio="none">
+                <path className="lit" d="M150 120 C 320 120, 360 300, 540 300" />
+                <path d="M540 300 C 760 300, 800 110, 1000 110" />
+                <path d="M150 120 C 280 240, 300 420, 470 440" />
+                <path className="lit" d="M1000 110 C 1080 240, 980 400, 820 440" />
+                <circle className="node" cx="150" cy="120" r="5" />
+                <circle className="node" cx="540" cy="300" r="5" />
+                <circle className="node" cx="1000" cy="110" r="5" />
+                <circle className="node" cx="470" cy="440" r="5" />
+                <circle className="node" cx="820" cy="440" r="5" />
+              </svg>
             </div>
 
-            {/* stats */}
-            <div className="fc-stats" style={{ marginTop: 38, border: "2px solid var(--ink)" }}>
+            <div style={{ position: "relative", zIndex: 1, maxWidth: 760 }}>
+              <span className="chip anim-fade-up" style={{ marginBottom: 22 }}>
+                <span className="dot" /> ARC Testnet · native USDC
+              </span>
+              <h1 className="display anim-fade-up" style={{ fontSize: "clamp(46px, 8vw, 96px)", marginTop: 20 }}>
+                Cut one frame.
+                <br />
+                <span className="display-2">Mint the moment.</span>
+              </h1>
+              <p className="anim-fade-up" style={{ fontSize: 17, color: "var(--ink-2)", maxWidth: 540, lineHeight: 1.6, marginTop: 24 }}>
+                A canvas of video sources. Pick a timestamp, cut that single frame, and wire it on-chain.
+                Collectors grab an edition for a few cents of USDC — and it pays you the instant they do.
+              </p>
+              <div className="anim-fade-up" style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap", alignItems: "center" }}>
+                <a href="#cut" className="btn btn--primary" style={{ padding: "13px 24px" }}>
+                  Initialize a cut <span className="arrow">→</span>
+                </a>
+                <a href="#canvas" className="btn btn--ghost">Browse the canvas</a>
+                {/* floating circular node button */}
+                <a href="#cut" aria-label="Add a node" className="node-btn anim-drift" style={{ textDecoration: "none", marginLeft: 4 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                </a>
+              </div>
+            </div>
+
+            {/* stats — three connected readouts */}
+            <div className="fc-stats anim-fade-up" style={{ marginTop: 52, position: "relative", zIndex: 1 }}>
               {[
                 { k: "Frames cut", v: stats.frames.toString() },
                 { k: "Editions collected", v: stats.collected.toString() },
                 { k: "USDC paid out", v: "$" + fmtUsdc(stats.volume) },
-              ].map((s, i) => (
-                <div key={s.k} className="fc-stat-cell" style={{ padding: "18px 20px", background: i === 1 ? "var(--paper-2)" : "var(--paper)" }}>
-                  <div className="display" style={{ fontSize: "clamp(22px, 6vw, 38px)", overflowWrap: "anywhere" }}>{s.v}</div>
-                  <div className="tag" style={{ color: "var(--muted)", marginTop: 6 }}>{s.k}</div>
+              ].map((s) => (
+                <div key={s.k} className="panel" style={{ padding: "20px 22px" }}>
+                  <div className="display" style={{ fontSize: "clamp(26px, 6vw, 40px)", overflowWrap: "anywhere", fontWeight: 400 }}>{s.v}</div>
+                  <div className="tag" style={{ marginTop: 8 }}>{s.k}</div>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* cut form */}
-          <section id="cut" style={{ ...wrap, marginTop: 18 }}>
-            <div className="box" style={{ background: "var(--paper)" }}>
-              <div className="filmstrip" />
-              <div style={{ padding: 20 }}>
-                <div className="tag" style={{ marginBottom: 16, color: "var(--red)" }}>● REC — cut a new frame</div>
+          {/* ── cut form: add a source node ── */}
+          <section id="cut" style={{ ...wrap, marginTop: 40 }}>
+            <div className="panel">
+              <div style={{ padding: 22 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+                  <span className="dot" style={{ background: "var(--bad)", boxShadow: "0 0 8px var(--bad)" }} />
+                  <span className="tag" style={{ color: "var(--ink-2)" }}>New node — cut a frame onto the canvas</span>
+                </div>
                 <div className="fc-cut2" style={{ marginBottom: 12 }}>
                   <div>
-                    <label className="tag" style={{ color: "var(--muted)", display: "block", marginBottom: 6 }}>Video link</label>
+                    <label className="tag" style={{ display: "block", marginBottom: 7 }}>Video link</label>
                     <input value={video} onChange={(e) => setVideo(e.target.value)} maxLength={300} placeholder="https://youtube.com/…" className="input" disabled={!account} />
                   </div>
                   <div>
-                    <label className="tag" style={{ color: "var(--muted)", display: "block", marginBottom: 6 }}>Timecode</label>
+                    <label className="tag" style={{ display: "block", marginBottom: 7 }}>Timecode</label>
                     <input value={tc} onChange={(e) => setTc(e.target.value)} placeholder="1:23  or  83" className="input" disabled={!account} />
                   </div>
                 </div>
                 <div className="fc-cut3">
                   <div>
-                    <label className="tag" style={{ color: "var(--muted)", display: "block", marginBottom: 6 }}>Frame title</label>
+                    <label className="tag" style={{ display: "block", marginBottom: 7 }}>Frame title</label>
                     <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="The look, act III" className="input" disabled={!account} />
                   </div>
                   <div>
-                    <label className="tag" style={{ color: "var(--muted)", display: "block", marginBottom: 6 }}>Price / edition (USDC)</label>
+                    <label className="tag" style={{ display: "block", marginBottom: 7 }}>Price / edition (USDC)</label>
                     <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.5" className="input" disabled={!account} />
                   </div>
                   {account ? (
-                    <button onClick={cut} disabled={cutting} className="btn btn--red" style={{ height: 43 }}>{cutting ? "Cutting…" : "Cut frame"}</button>
+                    <button onClick={cut} disabled={cutting} className="btn btn--primary" style={{ height: 44 }}>{cutting ? "Cutting…" : "Cut frame"}</button>
                   ) : (
-                    <button onClick={connect} className="btn btn--red" style={{ height: 43 }}>Connect</button>
+                    <button onClick={connect} className="btn btn--primary" style={{ height: 44 }}>Connect</button>
                   )}
                 </div>
                 {cutMsg && (
-                  <div className="mono" style={{ marginTop: 12, fontSize: 12.5, fontWeight: 700, color: cutMsg.startsWith("✓") ? "var(--ink)" : cutMsg.startsWith("✗") ? "var(--red)" : "var(--muted)" }}>{cutMsg}</div>
+                  <div className="mono" style={{ marginTop: 14, fontSize: 12, color: cutMsg.startsWith("✓") ? "var(--ok)" : cutMsg.startsWith("✗") ? "var(--bad)" : "var(--muted)" }}>{cutMsg}</div>
                 )}
               </div>
             </div>
           </section>
 
-          {/* contact sheet */}
-          <section id="sheet" style={{ ...wrap, marginTop: 40 }}>
-            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
-              <h2 className="display" style={{ fontSize: 40 }}>The contact sheet</h2>
-              <div style={{ display: "flex", border: "2px solid var(--ink)" }}>
-                {([["all", "All"], ["mine", "Yours"], ["collected", "Collected"]] as const).map(([t, lbl], i) => (
+          {/* ── canvas: the connected source-cards ── */}
+          <section id="canvas" style={{ ...wrap, marginTop: 56 }}>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+              <div>
+                <div className="tag" style={{ marginBottom: 10 }}>The canvas</div>
+                <h2 className="display" style={{ fontSize: "clamp(30px, 5vw, 46px)", fontWeight: 300 }}>Connected sources</h2>
+              </div>
+              <div style={{ display: "inline-flex", padding: 4, gap: 4, borderRadius: 999, border: "1px solid var(--line)", background: "var(--bg-2)" }}>
+                {([["all", "All"], ["mine", "Yours"], ["collected", "Collected"]] as const).map(([t, lbl]) => (
                   <button
                     key={t}
                     onClick={() => setTab(t)}
-                    className="tag"
-                    style={{ padding: "9px 15px", border: "none", borderLeft: i ? "2px solid var(--ink)" : "none", background: tab === t ? "var(--ink)" : "var(--paper)", color: tab === t ? "var(--paper)" : "var(--ink)", cursor: "pointer" }}
+                    className="mono"
+                    style={{ padding: "8px 15px", border: "none", borderRadius: 999, background: tab === t ? "var(--ink)" : "transparent", color: tab === t ? "#16171a" : "var(--muted)", cursor: "pointer", fontSize: 11.5, letterSpacing: "0.04em", fontWeight: tab === t ? 600 : 400, transition: "background 0.18s ease, color 0.18s ease" }}
                   >
                     {lbl}
                   </button>
@@ -304,23 +337,23 @@ export default function Home() {
             </div>
 
             {!account && tab !== "all" ? (
-              <div className="box" style={{ padding: 44, textAlign: "center" }} ><span className="mono" style={{ color: "var(--muted)", fontSize: 13 }}>Connect your wallet to see this.</span></div>
+              <div className="panel" style={{ padding: 48, textAlign: "center" }}><span className="mono" style={{ color: "var(--muted)", fontSize: 13 }}>Connect your wallet to see this.</span></div>
             ) : list.length === 0 ? (
-              <div className="box" style={{ padding: 44, textAlign: "center" }}><span className="mono" style={{ color: "var(--muted)", fontSize: 13 }}>{tab === "all" ? "No frames cut yet. Be the first ↑" : tab === "mine" ? "You haven't cut a frame yet." : "Nothing collected yet."}</span></div>
+              <div className="panel" style={{ padding: 48, textAlign: "center" }}><span className="mono" style={{ color: "var(--muted)", fontSize: 13 }}>{tab === "all" ? "No frames on the canvas yet. Be the first ↑" : tab === "mine" ? "You haven't cut a frame yet." : "Nothing collected yet."}</span></div>
             ) : (
               <>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(228px, 1fr))", gap: 18 }}>
                   {list.map((f) => (
                     <FrameCard key={f.id} frame={f} me={account} owned={owned[f.id] ?? 0} busy={collectBusy === f.id} msg={collectMsg[f.id]} onCollect={collectFrame} />
                   ))}
                 </div>
                 {tab === "all" && frames.length < Number(stats.frames) && (
-                  <div className="mono" style={{ marginTop: 14, fontSize: 12, color: "var(--muted)" }}>
+                  <div className="mono" style={{ marginTop: 16, fontSize: 12, color: "var(--muted)" }}>
                     Showing the latest {frames.length} of {stats.frames.toString()} frames.
                   </div>
                 )}
                 {tab !== "all" && list.length >= MAX && (
-                  <div className="mono" style={{ marginTop: 14, fontSize: 12, color: "var(--muted)" }}>
+                  <div className="mono" style={{ marginTop: 16, fontSize: 12, color: "var(--muted)" }}>
                     Showing the latest {MAX}. Older frames aren&apos;t listed here.
                   </div>
                 )}
@@ -328,12 +361,12 @@ export default function Home() {
             )}
           </section>
 
-          {/* why ARC */}
-          <section style={{ ...wrap, marginTop: 56 }}>
-            <div className="box" style={{ padding: 0 }}>
-              <div style={{ padding: "26px 28px", borderBottom: "2px solid var(--ink)" }}>
-                <div className="tag" style={{ color: "var(--red)", marginBottom: 12 }}>The Arc bit</div>
-                <h2 className="display" style={{ fontSize: "clamp(28px,4vw,48px)", maxWidth: 720 }}>A 30-cent sale only works if it&apos;s actually instant and free to move.</h2>
+          {/* ── why ARC ── */}
+          <section id="arc" style={{ ...wrap, marginTop: 64 }}>
+            <div className="panel" style={{ padding: 0, overflow: "hidden" }}>
+              <div style={{ padding: "30px 30px 26px", borderBottom: "1px solid var(--line)" }}>
+                <div className="tag" style={{ marginBottom: 14 }}>The Arc layer</div>
+                <h2 className="display" style={{ fontSize: "clamp(26px,4vw,44px)", maxWidth: 720, fontWeight: 300 }}>A 30-cent sale only works if it&apos;s actually instant and free to move.</h2>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px,1fr))" }}>
                 {[
@@ -341,10 +374,10 @@ export default function Home() {
                   { n: "02", t: "The creator gets paid on the spot", d: "The moment a fan collects, the USDC lands in your wallet in the same transaction. No platform float, no payout you chase." },
                   { n: "03", t: "Every cut is on the record", d: "Source video, exact timecode, price and every edition — all on-chain and readable by anyone on ArcScan." },
                 ].map((row, i) => (
-                  <div key={row.n} style={{ padding: "22px 24px", borderLeft: i ? "2px solid var(--ink)" : "none" }}>
-                    <div className="display" style={{ fontSize: 22, color: "var(--red)", marginBottom: 10 }}>{row.n}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 7, lineHeight: 1.2 }}>{row.t}</div>
-                    <div className="mono" style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>{row.d}</div>
+                  <div key={row.n} style={{ padding: "26px 26px", borderLeft: i ? "1px solid var(--line)" : "none" }}>
+                    <div className="mono" style={{ fontSize: 13, color: "var(--glow)", marginBottom: 12, letterSpacing: "0.1em" }}>{row.n}</div>
+                    <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 9, lineHeight: 1.25, letterSpacing: "-0.01em" }}>{row.t}</div>
+                    <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>{row.d}</div>
                   </div>
                 ))}
               </div>
@@ -352,10 +385,10 @@ export default function Home() {
           </section>
 
           {/* footer */}
-          <footer style={{ ...wrap, marginTop: 40 }}>
-            <div className="mono" style={{ borderTop: "2px solid var(--ink)", paddingTop: 18, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <footer style={{ ...wrap, marginTop: 48 }}>
+            <div className="mono" style={{ borderTop: "1px solid var(--line)", paddingTop: 20, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", fontSize: 11, letterSpacing: "0.05em" }}>
               <span style={{ color: "var(--muted)" }}>FrameCut · ARC Testnet</span>
-              <a href={`${ARCSCAN}/address/${CONTRACT_ADDRESS}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--ink)", textDecoration: "none", fontWeight: 700 }}>
+              <a href={`${ARCSCAN}/address/${CONTRACT_ADDRESS}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--ink-2)", textDecoration: "none" }}>
                 Verified contract {shortAddr(CONTRACT_ADDRESS, 8, 6)} ↗
               </a>
             </div>

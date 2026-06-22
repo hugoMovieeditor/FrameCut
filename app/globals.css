@@ -1,13 +1,30 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Archivo:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* ──────────────────────────────────────────────────────────────
+   FrameCut — "Content Machine" node-canvas re-skin.
+   Dark, minimal. Floating rounded source-cards connected by dashed
+   curved connectors on a soft technical-calm canvas. Fonts via
+   next/font (see layout.tsx) exposed as --font-sans / --font-mono.
+   ────────────────────────────────────────────────────────────── */
+
 :root {
-  --paper: #f3f1e8;
-  --paper-2: #e9e6d8;
-  --ink: #14130e;
-  --red: #e0301c;
-  --muted: #6c6a5c;
-  --faint: #97947f;
+  --bg: #17181b;        /* canvas base */
+  --bg-2: #1d1f23;      /* slightly lighter wash */
+  --card: #212327;      /* floating card surface */
+  --card-2: #26282d;    /* raised / hover */
+  --line: #34373d;      /* hairline borders */
+  --line-2: #2a2c31;    /* fainter borders */
+  --ink: #f4f5f6;       /* primary text */
+  --ink-2: #b9bcc2;     /* secondary text */
+  --muted: #7c8088;     /* tertiary / labels */
+  --faint: #565a61;     /* placeholder / very dim */
+  --accent: #e8e9ec;    /* light accent (headline tone 1) */
+  --glow: #8ea0ff;      /* cool node-link accent */
+  --glow-2: #b9a7ff;    /* secondary cool accent */
+  --ok: #7ee0a8;        /* success */
+  --bad: #ff7a6b;       /* error */
+  --radius: 18px;
+  --radius-sm: 12px;
 }
 
 * {
@@ -20,7 +37,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* a single wide child can never force horizontal page scroll (clip keeps sticky working) */
 html,
 body {
   max-width: 100%;
@@ -28,11 +44,38 @@ body {
 }
 
 body {
-  background: var(--paper);
+  background: var(--bg);
   color: var(--ink);
-  font-family: 'Archivo', -apple-system, sans-serif;
-  font-weight: 500;
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  position: relative;
+}
+
+/* canvas atmosphere — soft vignette + dotted grid + faint grain */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(900px 600px at 78% -8%, rgba(142, 160, 255, 0.10), transparent 60%),
+    radial-gradient(800px 520px at 10% 8%, rgba(185, 167, 255, 0.07), transparent 60%),
+    radial-gradient(1100px 800px at 50% 120%, rgba(126, 224, 168, 0.05), transparent 60%),
+    var(--bg);
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 26px 26px;
+  background-position: -13px -13px;
+  -webkit-mask-image: radial-gradient(circle at 50% 30%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(circle at 50% 30%, #000 0%, transparent 78%);
 }
 
 button {
@@ -43,161 +86,298 @@ a {
 }
 
 ::selection {
-  background: var(--red);
-  color: var(--paper);
+  background: rgba(142, 160, 255, 0.32);
+  color: var(--ink);
 }
 
 ::-webkit-scrollbar {
-  width: 12px;
+  width: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--paper);
-  border-left: 2px solid var(--ink);
+  background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--ink);
+  background: var(--line);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
 
 /* ── type ─────────────────────────────────────────────── */
 .display {
-  font-family: 'Anton', 'Archivo', sans-serif;
+  font-family: var(--font-sans), sans-serif;
   font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
-  line-height: 0.92;
+  letter-spacing: -0.02em;
+  line-height: 0.98;
+}
+.display-2 {
+  /* the lighter / dimmer tone in the two-tone headline */
+  color: var(--muted);
 }
 .mono {
-  font-family: 'Space Mono', ui-monospace, monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
 }
 .tag {
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-family: var(--font-mono), monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
+  color: var(--muted);
 }
 
-/* ── brutalist building blocks (no radius, hard borders) ── */
-.box {
-  background: var(--paper);
-  border: 2px solid var(--ink);
+/* ── surfaces ─────────────────────────────────────────── */
+.panel {
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 22px 50px -28px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
-.box-fill {
-  background: var(--paper-2);
-  border: 2px solid var(--ink);
+.glass {
+  background: rgba(33, 35, 39, 0.72);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  border: 1px solid var(--line);
 }
 
+/* ── buttons ──────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
-  border: 2px solid var(--ink);
-  background: var(--paper);
+  border: 1px solid var(--line);
+  background: var(--card-2);
   color: var(--ink);
-  padding: 11px 20px;
-  font-family: 'Space Mono', monospace;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
   cursor: pointer;
   text-decoration: none;
   line-height: 1;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
 }
 .btn:hover:not(:disabled) {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--card);
+  border-color: var(--muted);
+  transform: translateY(-1px);
 }
 .btn:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
-.btn--red {
-  background: var(--red);
-  color: var(--paper);
-  border-color: var(--ink);
-}
-.btn--red:hover:not(:disabled) {
+/* primary — light pill, like "Initialize Canvas" */
+.btn--primary {
   background: var(--ink);
-  color: var(--paper);
+  color: #16171a;
+  border-color: var(--ink);
+  font-weight: 600;
+}
+.btn--primary:hover:not(:disabled) {
+  background: #ffffff;
+  color: #131418;
+  box-shadow: 0 0 0 4px rgba(244, 245, 246, 0.08), 0 14px 36px -16px rgba(255, 255, 255, 0.4);
+}
+.btn--ghost {
+  background: transparent;
 }
 .btn--sm {
-  padding: 8px 13px;
-  font-size: 12px;
+  padding: 9px 14px;
+  font-size: 11.5px;
+}
+.btn .arrow {
+  display: inline-flex;
+  transition: transform 0.2s ease;
+}
+.btn:hover:not(:disabled) .arrow {
+  transform: translateX(3px);
 }
 
+/* circular floating node button */
+.node-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: radial-gradient(circle at 35% 30%, var(--card-2), var(--card));
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+.node-btn:hover {
+  border-color: var(--glow);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+.node-btn::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 0 rgba(142, 160, 255, 0.45);
+  animation: nodePulse 3.4s ease-out infinite;
+}
+
+/* ── inputs ───────────────────────────────────────────── */
 .input {
   width: 100%;
-  background: var(--paper);
-  border: 2px solid var(--ink);
-  padding: 11px 13px;
-  font-family: 'Space Mono', monospace;
-  font-size: 13.5px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
   color: var(--ink);
   outline: none;
+  transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
 .input::placeholder {
   color: var(--faint);
 }
 .input:focus {
-  background: #fffdf6;
+  border-color: var(--glow);
+  background: #1a1c20;
+  box-shadow: 0 0 0 3px rgba(142, 160, 255, 0.12);
+}
+.input:disabled {
+  opacity: 0.55;
 }
 
-/* sprocket strip */
-.filmstrip {
-  height: 26px;
-  background: var(--ink);
+/* ── node source-card ─────────────────────────────────── */
+.src-card {
+  position: relative;
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
   display: flex;
-  align-items: center;
+  flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 18px 44px -26px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
-.filmstrip::before {
-  content: "";
-  display: block;
-  width: 100%;
-  height: 10px;
-  background: repeating-linear-gradient(90deg, var(--paper) 0 9px, transparent 9px 26px);
+.src-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--muted);
+  box-shadow: 0 28px 60px -28px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(142, 160, 255, 0.12);
+}
+/* connector node nub on the card edge */
+.src-card .nub {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1.5px solid var(--glow);
+  transform: translateY(-50%);
+  z-index: 2;
+}
+.src-card .nub.left { left: -5px; }
+.src-card .nub.right { right: -5px; }
+
+/* play glyph chip on a source card */
+.play-chip {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(20, 21, 24, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(4px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
 }
 
-/* wallet menu item */
-.fc-mi {
+/* small chip / label */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  font-family: var(--font-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--ink-2);
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--glow);
+  box-shadow: 0 0 8px var(--glow);
+}
+
+/* dropdown / wallet menu item */
+.menu-item {
   display: flex;
   align-items: center;
   gap: 9px;
   width: 100%;
-  padding: 10px 13px;
-  background: var(--paper);
+  padding: 11px 14px;
+  background: transparent;
   border: none;
-  border-top: 2px solid var(--ink);
-  color: var(--ink);
-  font-family: 'Space Mono', monospace;
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  border-top: 1px solid var(--line-2);
+  color: var(--ink-2);
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.03em;
   text-align: left;
   cursor: pointer;
   text-decoration: none;
+  transition: background 0.14s ease, color 0.14s ease;
 }
-.fc-mi:hover {
-  background: var(--ink);
-  color: var(--paper);
+.menu-item:hover {
+  background: var(--card-2);
+  color: var(--ink);
 }
-.fc-mi.danger:hover {
-  background: var(--red);
+.menu-item.danger:hover {
+  color: var(--bad);
 }
 
-/* ── responsive grids (inline styles can't be media-queried, so these live here) ── */
+/* ── connector svg overlay (decorative dashed curves) ── */
+.connectors {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+}
+.connectors path {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.3;
+  stroke-dasharray: 5 7;
+  animation: dashFlow 2.6s linear infinite;
+}
+.connectors path.lit {
+  stroke: rgba(142, 160, 255, 0.5);
+}
+.connectors .node {
+  fill: var(--card);
+  stroke: var(--glow);
+  stroke-width: 1.4;
+}
+
+/* ── responsive grids ─────────────────────────────────── */
 .fc-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
-.fc-stats .fc-stat-cell + .fc-stat-cell {
-  border-left: 2px solid var(--ink);
-}
-
 .fc-cut2 {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
@@ -210,13 +390,9 @@ a {
   align-items: end;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .fc-stats {
     grid-template-columns: 1fr;
-  }
-  .fc-stats .fc-stat-cell + .fc-stat-cell {
-    border-left: none;
-    border-top: 2px solid var(--ink);
   }
   .fc-cut2,
   .fc-cut3 {
@@ -227,10 +403,49 @@ a {
   }
 }
 
-/* keep the wallet pill from overflowing the sticky header on small phones */
-@media (max-width: 440px) {
+@media (max-width: 480px) {
   .hdr-balance,
   .hdr-div {
     display: none;
+  }
+}
+
+/* ── animation ────────────────────────────────────────── */
+@keyframes dashFlow {
+  to { stroke-dashoffset: -48; }
+}
+@keyframes nodePulse {
+  0%   { box-shadow: 0 0 0 0 rgba(142, 160, 255, 0.4); }
+  70%  { box-shadow: 0 0 0 11px rgba(142, 160, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(142, 160, 255, 0); }
+}
+@keyframes drift {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+@keyframes driftSlow {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(14px, -10px) scale(1.06); }
+}
+
+.anim-drift { animation: drift 7s ease-in-out infinite; }
+.anim-drift-slow { animation: driftSlow 9s ease-in-out infinite; }
+.anim-fade-up { animation: fadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
   }
 }
