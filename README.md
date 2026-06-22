@@ -12,6 +12,8 @@
 └─────────────────────────────────────────────────────────────┘
 ```
 
+![FrameCut — a 35mm filmstrip with one frame cut at an exact timecode](.github/banner.svg)
+
 > A cut lives or dies on a handful of frames. FrameCut is for pulling
 > one of those out — a single still at an exact timecode — and letting
 > people own an edition of it. Collectors pay in USDC; the money walks
