@@ -236,19 +236,19 @@ export default function Home() {
             </div>
 
             <div style={{ position: "relative", zIndex: 1, maxWidth: 760 }}>
-              <span className="chip anim-fade-up" style={{ marginBottom: 22 }}>
+              <span className="chip splice-in" style={{ marginBottom: 22 }}>
                 <span className="dot" /> ARC Testnet · native USDC
               </span>
-              <h1 className="display anim-fade-up" style={{ fontSize: "clamp(46px, 8vw, 96px)", marginTop: 20 }}>
+              <h1 className="display splice-in" style={{ fontSize: "clamp(46px, 8vw, 96px)", marginTop: 20 }}>
                 Cut one frame.
                 <br />
                 <span className="display-2">Mint the moment.</span>
               </h1>
-              <p className="anim-fade-up" style={{ fontSize: 17, color: "var(--ink-2)", maxWidth: 540, lineHeight: 1.6, marginTop: 24 }}>
+              <p className="splice-in" style={{ fontSize: 17, color: "var(--ink-2)", maxWidth: 540, lineHeight: 1.6, marginTop: 24 }}>
                 A canvas of video sources. Pick a timestamp, cut that single frame, and wire it on-chain.
                 Collectors grab an edition for a few cents of USDC — and it pays you the instant they do.
               </p>
-              <div className="anim-fade-up" style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap", alignItems: "center" }}>
+              <div className="splice-in" style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap", alignItems: "center" }}>
                 <a href="#cut" className="btn btn--primary" style={{ padding: "13px 24px" }}>
                   Cut a frame <span className="arrow">→</span>
                 </a>
@@ -261,7 +261,7 @@ export default function Home() {
             </div>
 
             {/* stats — three connected readouts */}
-            <div className="fc-stats anim-fade-up" style={{ marginTop: 52, position: "relative", zIndex: 1 }}>
+            <div className="fc-stats splice-in" style={{ marginTop: 52, position: "relative", zIndex: 1 }}>
               {[
                 { k: "Frames cut", v: stats.frames.toString() },
                 { k: "Editions collected", v: stats.collected.toString() },

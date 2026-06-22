@@ -120,9 +120,9 @@ a {
 }
 .tag {
   font-family: var(--font-mono), monospace;
-  font-size: 10.5px;
+  font-size: 12.5px;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -319,13 +319,13 @@ a {
   box-shadow: 0 0 8px var(--glow);
 }
 
-/* dropdown / wallet menu item */
-.menu-item {
+/* dropdown / wallet menu row — a reel / source-node line */
+.reel-line {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   width: 100%;
-  padding: 11px 14px;
+  padding: 11px 15px;
   background: transparent;
   border: none;
   border-top: 1px solid var(--line-2);
@@ -336,14 +336,16 @@ a {
   text-align: left;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.14s ease, color 0.14s ease;
+  transition: background 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
 }
-.menu-item:hover {
+.reel-line:hover {
   background: var(--card-2);
   color: var(--ink);
+  box-shadow: inset 3px 0 0 0 var(--glow);
 }
-.menu-item.danger:hover {
+.reel-line.danger:hover {
   color: var(--bad);
+  box-shadow: inset 3px 0 0 0 var(--bad);
 }
 
 /* ── connector svg overlay (decorative dashed curves) ── */
@@ -427,7 +429,7 @@ a {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-12px); }
 }
-@keyframes fadeUp {
+@keyframes splice {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
@@ -438,7 +440,7 @@ a {
 
 .anim-drift { animation: drift 7s ease-in-out infinite; }
 .anim-drift-slow { animation: driftSlow 9s ease-in-out infinite; }
-.anim-fade-up { animation: fadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.splice-in { animation: splice 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 @media (prefers-reduced-motion: reduce) {
   *,

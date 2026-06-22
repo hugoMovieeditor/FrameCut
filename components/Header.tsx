@@ -95,9 +95,9 @@ export default function Header({ account, balance, chainOk, connecting, onConnec
                         <div className="tag" style={{ marginBottom: 5 }}>Connected</div>
                         <div className="mono" style={{ fontSize: 12, color: "var(--ink-2)" }}>{account.slice(0, 12)}…{account.slice(-8)}</div>
                       </div>
-                      <button className="menu-item" onClick={copy}>{copied ? "Copied!" : "Copy address"}</button>
-                      <a className="menu-item" href={`${ARCSCAN}/address/${account}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>View on ArcScan ↗</a>
-                      <button className="menu-item danger" onClick={() => { setOpen(false); onDisconnect(); }}>Disconnect</button>
+                      <button className="reel-line" onClick={copy}>{copied ? "Copied!" : "Copy address"}</button>
+                      <a className="reel-line" href={`${ARCSCAN}/address/${account}`} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>View on ArcScan ↗</a>
+                      <button className="reel-line danger" onClick={() => { setOpen(false); onDisconnect(); }}>Disconnect</button>
                     </div>
                   </>
                 )}
