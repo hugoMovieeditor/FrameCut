@@ -63,7 +63,12 @@ export default function Header({ account, balance, chainOk, connecting, onConnec
           {account ? (
             <>
               {!chainOk && (
-                <button onClick={() => switchToArc().catch(() => {})} className="btn btn--sm" style={{ borderColor: "var(--bad)", color: "var(--bad)" }}>
+                <button
+                  type="button"
+                  onClick={() => switchToArc().catch(() => {})}
+                  className="btn btn--sm"
+                  style={{ borderColor: "var(--bad)", color: "var(--bad)" }}
+                >
                   Wrong net — switch
                 </button>
               )}
@@ -99,8 +104,13 @@ export default function Header({ account, balance, chainOk, connecting, onConnec
               </div>
             </>
           ) : (
-            <button onClick={onConnect} disabled={connecting} className="btn btn--primary">
-              {connecting ? "Connecting…" : "Connect wallet"}
+            <button
+              type="button"
+              onClick={onConnect}
+              disabled={connecting}
+              className="btn btn--primary"
+            >
+              {connecting ? "Linking…" : "Link wallet"}
             </button>
           )}
         </div>
