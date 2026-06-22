@@ -170,7 +170,7 @@ a {
   opacity: 0.45;
   cursor: not-allowed;
 }
-/* primary — light pill, like "Initialize Canvas" */
+/* primary — light pill */
 .btn--primary {
   background: var(--ink);
   color: #16171a;

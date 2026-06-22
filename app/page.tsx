@@ -250,7 +250,7 @@ export default function Home() {
               </p>
               <div className="anim-fade-up" style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap", alignItems: "center" }}>
                 <a href="#cut" className="btn btn--primary" style={{ padding: "13px 24px" }}>
-                  Initialize a cut <span className="arrow">→</span>
+                  Cut a frame <span className="arrow">→</span>
                 </a>
                 <a href="#canvas" className="btn btn--ghost">Browse the canvas</a>
                 {/* floating circular node button */}
